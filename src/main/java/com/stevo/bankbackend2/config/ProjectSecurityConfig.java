@@ -1,5 +1,6 @@
 package com.stevo.bankbackend2.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -8,29 +9,27 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 
-import com.stevo.bankbackend2.filter.AuthLoggingAfterFilter;
-import com.stevo.bankbackend2.filter.AuthLoggingAtFilter;
-import com.stevo.bankbackend2.filter.RequestValidationBeforeFilter;
-import com.stevo.bankbackend2.filter.csrfCookieFilter;
+import com.stevo.bankbackend2.filter.JWTTokenGeneratorFilter;
+import com.stevo.bankbackend2.filter.JWTTokenValidatorFilter;
+
 
 import static org.springframework.security.config.Customizer.withDefaults;
+
+import java.util.Arrays;
 
 @Configuration
 public class ProjectSecurityConfig {
 
+
+
   @Bean
   SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
 
-    CsrfTokenRequestAttributeHandler csrfTokenHandler = new CsrfTokenRequestAttributeHandler();
-    csrfTokenHandler.setCsrfRequestAttributeName("_csrf");
-
     http
-        .securityContext(securityContext -> securityContext.requireExplicitSave(false))
-        .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
+        .sessionManagement(
+            sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // no session
 
         .cors(cors -> {
           cors.configurationSource(request -> {
@@ -40,20 +39,14 @@ public class ProjectSecurityConfig {
             config.addAllowedHeader("*");
             config.setAllowCredentials(true);
             config.setMaxAge(3600L);
+            config.setExposedHeaders(Arrays.asList("Authorization")); // for JWT
             return config;
           });
         })
 
-        .csrf(csrf -> csrf
-            .csrfTokenRequestHandler(csrfTokenHandler)
-            .ignoringRequestMatchers("/register")
-            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
-
-        .addFilterBefore(new RequestValidationBeforeFilter(), BasicAuthenticationFilter.class)
-        .addFilterAt(new AuthLoggingAtFilter(), BasicAuthenticationFilter.class)
-        .addFilterAfter(new csrfCookieFilter(), BasicAuthenticationFilter.class)
-        .addFilterAfter(new AuthLoggingAfterFilter(), BasicAuthenticationFilter.class)
-
+        // jwt
+        .addFilterBefore(new JWTTokenValidatorFilter(), BasicAuthenticationFilter.class)
+        .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class)
 
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/myAccount").hasRole("USER")
@@ -67,6 +60,7 @@ public class ProjectSecurityConfig {
 
         .formLogin(withDefaults())
         .httpBasic(withDefaults());
+
 
     return http.build();
   }

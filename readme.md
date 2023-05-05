@@ -18,3 +18,25 @@ in authentication provider we use userDetailsService to load the user from the d
 9. setting up cors on security config,(not on controller level)
 10. csrf setup on security config
 11. create a filter to send the csrf token to the client with every response
+
+JWT
+1. add dependency
+2. set session management to stateless in security config
+3. JWT generate filter
+    - @Override doFilterInternal
+    - get the authentication object from the security context
+    - make secret key
+    - create jwt token
+    - add token to the response header
+4. in security config add jwt filter after basic auth filter
+5. JWT validate filter
+    - @Override doFilterInternal
+    - get token from the request header
+    - validate token
+    - get username from token
+    - create authentication object
+    - set authentication object in security context
+
+    eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJCYW5rYmFja2VuZDIiLCJzdWIiOiJoYXBweUBleGFtcGxlLmNvbSIsImF1dGhvcml0aWVzIjoiUk9MRV9VU0VSLCBST0xFX0FETUlOIiwiaWF0IjoxNjgzMjg0MjU3LCJleHAiOjE2ODM2Njk2MDB9.xyafOXF59vEBepYXpnTc8nnogahV9_SE6gc6vf6HXac
+    
+    eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJCYW5rYmFja2VuZDIiLCJzdWIiOiJoYXBweUBleGFtcGxlLmNvbSIsImF1dGhvcml0aWVzIjoiUk9MRV9VU0VSLCBST0xFX0FETUlOIiwiaWF0IjoxNjgzMjg0MjU3LCJleHAiOjE2ODM2Njk2MDB9.xyafOXF59vEBepYXpnTc8nnogahV9_SE6gc6vf6HXac
